@@ -17,15 +17,24 @@ class FireflyAlgorithm:
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
-        self.fireflies = np.random.rand(self.n_fireflies, 2)
-        self.fireflies[:, 0] = self.fireflies[:, 0] * (bounds[0][1] - bounds[0][0]) + bounds[0][0]
-        self.fireflies[:, 1] = self.fireflies[:, 1] * (bounds[1][1] - bounds[1][0]) + bounds[1][0]
+
+        self.fireflies = np.zeros((self.n_fireflies, 2))
+        print("Generating fireflies...")
+        for i in range(self.n_fireflies):
+            while True:
+                firefly = np.random.rand(2)
+                firefly[0] = firefly[0] * (bounds[0][1] - bounds[0][0]) + bounds[0][0]
+                firefly[1] = firefly[1] * (bounds[1][1] - bounds[1][0]) + bounds[1][0]
+                if self._satisfy_constraints(firefly):
+                    self.fireflies[i] = firefly
+                    print(i + 1, "/", self.n_fireflies, "fireflies generated")
+                    break
+
         self.intensities = np.apply_along_axis(self.obj_func, 1, self.fireflies)
 
     def optimize(self):
         best_firefly = None
         best_intensity = -np.inf
-        step_size = self.max_iter // 100  # Calculate step size
 
         for t in range(self.max_iter):
             print("Iteration", t, "Best solution found:", best_firefly)
@@ -53,8 +62,7 @@ class FireflyAlgorithm:
                             break
                 i += 1
 
-            if t % step_size == 0:  # Yield fireflies only when current iteration is a multiple of step size
-                yield self.fireflies
+            yield self.fireflies
 
         print("Best solution found:", best_firefly)
 
@@ -120,14 +128,32 @@ class LinearProgrammingGUI:
         self.num_fireflies = ttk.Entry(self.second_frame)
         self.num_fireflies.grid(column=1, row=4)
 
+        # Alpha parameter
+        ttk.Label(self.second_frame, text="Alpha").grid(column=0, row=5)
+        self.alpha = ttk.Entry(self.second_frame)
+        self.alpha.grid(column=1, row=5)
+        self.alpha.insert(0, "0.5")  # Insert the default value
+
+        # Beta parameter
+        ttk.Label(self.second_frame, text="Beta").grid(column=0, row=6)
+        self.beta = ttk.Entry(self.second_frame)
+        self.beta.grid(column=1, row=6)
+        self.beta.insert(0, "0.2")  # Insert the default value
+
+        # Gamma parameter
+        ttk.Label(self.second_frame, text="Gamma").grid(column=0, row=7)
+        self.gamma = ttk.Entry(self.second_frame)
+        self.gamma.grid(column=1, row=7)
+        self.gamma.insert(0, "1.0")  # Insert the default value
+
         # Start button
         self.start_button = ttk.Button(self.second_frame, text="Start", command=self.start_optimization)
-        self.start_button.grid(column=0, row=5, columnspan=2)
+        self.start_button.grid(column=0, row=8, columnspan=2)
 
         self.constraint_entries = []
 
     def add_constraint(self):
-        row = len(self.constraint_entries) + 6
+        row = len(self.constraint_entries) + 9
         coeffs = [tk.Entry(self.second_frame) for _ in range(2)]
         for i, coeff in enumerate(coeffs):
             coeff.grid(column=i, row=row)
@@ -154,8 +180,11 @@ class LinearProgrammingGUI:
 
         num_iterations = int(self.num_iterations.get())
         num_fireflies = int(self.num_fireflies.get())
+        alpha = float(self.alpha.get())  # Get the alpha parameter from the user's input
+        beta = float(self.beta.get())  # Get the beta parameter from the user's input
+        gamma = float(self.gamma.get())  # Get the gamma parameter from the user's input
 
-        fa = FireflyAlgorithm(obj_func, constraints, bounds=[(0, 1000), (0, 1000)], n_fireflies=num_fireflies, max_iter=num_iterations)
+        fa = FireflyAlgorithm(obj_func, constraints, bounds=[(0, 1000), (0, 1000)], n_fireflies=num_fireflies, max_iter=num_iterations, alpha=alpha, beta=beta, gamma=gamma)
 
         fig, ax = plt.subplots()
         scat = ax.scatter([], [], c='red')
@@ -189,7 +218,7 @@ class LinearProgrammingGUI:
             ax.set_ylim(min_y, max_y)  # Set ylim to the minimum and maximum y values
             return scat,
 
-        ani = FuncAnimation(fig, update, frames=len(fireflies_list), repeat=False, interval=1000)
+        ani = FuncAnimation(fig, update, frames=len(fireflies_list), repeat=False, interval=500)
         plt.show()
 
 if __name__ == "__main__":

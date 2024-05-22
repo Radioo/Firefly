@@ -77,93 +77,97 @@ class FireflyAlgorithm:
                 return False
         return True
 
-
 class LinearProgrammingGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Firefly Algorithm for Linear Programming")
 
+        # Center the main frame in the root window
         self.main_frame = tk.Frame(root)
-        self.main_frame.pack(fill=tk.BOTH, expand=1)
+        self.main_frame.grid(row=0, column=0, padx=20, pady=20)
 
-        self.canvas = tk.Canvas(self.main_frame)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
-
-        self.scrollbar = ttk.Scrollbar(self.main_frame, orient=tk.VERTICAL, command=self.canvas.yview)
-        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.canvas.bind('<Configure>', lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-
-        self.second_frame = tk.Frame(self.canvas)
-
-        self.canvas.create_window((0, 0), window=self.second_frame, anchor="nw")
+        root.grid_rowconfigure(0, weight=1)
+        root.grid_columnconfigure(0, weight=1)
 
         # Objective function inputs
-        ttk.Label(self.second_frame, text="Objective Function").grid(column=0, row=0)
-        self.obj_a = ttk.Entry(self.second_frame)
-        self.obj_a.grid(column=1, row=0)
-        ttk.Label(self.second_frame, text="x +").grid(column=2, row=0)
-        self.obj_b = ttk.Entry(self.second_frame)
-        self.obj_b.grid(column=3, row=0)
-        ttk.Label(self.second_frame, text="y").grid(column=4, row=0)
+        ttk.Label(self.main_frame, text="Objective Function").grid(column=0, row=0, columnspan=4, pady=(0,20))
+        self.obj_a = ttk.Entry(self.main_frame, width=10)
+        self.obj_a.grid(column=0, row=1)
+        ttk.Label(self.main_frame, text="x1 +").grid(column=1, row=1)
+        self.obj_b = ttk.Entry(self.main_frame, width=10)
+        self.obj_b.grid(column=2, row=1)
+        ttk.Label(self.main_frame, text="x2").grid(column=3, row=1)
 
         # Maximize or minimize
         self.opt_dir = tk.StringVar()
-        ttk.Radiobutton(self.second_frame, text="Maximize", variable=self.opt_dir, value="max").grid(column=0, row=1)
-        ttk.Radiobutton(self.second_frame, text="Minimize", variable=self.opt_dir, value="min").grid(column=1, row=1)
+        ttk.Radiobutton(self.main_frame, text="Maximize", variable=self.opt_dir, value="max").grid(column=0, row=2, columnspan=2, pady=(10,5))
+        ttk.Radiobutton(self.main_frame, text="Minimize", variable=self.opt_dir, value="min").grid(column=2, row=2, columnspan=2, pady=(10,5))
 
         # Constraints
         self.constraints = []
-        self.add_constraint_button = ttk.Button(self.second_frame, text="Add Constraint", command=self.add_constraint)
-        self.add_constraint_button.grid(column=0, row=2, columnspan=2)
+        self.add_constraint_button = ttk.Button(self.main_frame, text="Add Constraint", command=self.add_constraint)
+        self.add_constraint_button.grid(column=0, row=3, columnspan=2, pady=(5,10))
+
+        # Delete constraint button
+        self.delete_constraint_button = ttk.Button(self.main_frame, text="Delete Constraint", command=self.delete_constraint)
+        self.delete_constraint_button.grid(column=2, row=3, columnspan=2, pady=(5,10))
 
         # Number of iterations
-        ttk.Label(self.second_frame, text="Number of Iterations").grid(column=0, row=3)
-        self.num_iterations = ttk.Entry(self.second_frame)
-        self.num_iterations.grid(column=1, row=3)
+        ttk.Label(self.main_frame, text="Number of Iterations").grid(column=0, row=4, columnspan=2, pady=(5,5))
+        self.num_iterations = ttk.Entry(self.main_frame)
+        self.num_iterations.grid(column=2, row=4, columnspan=2)
 
         # Number of fireflies
-        ttk.Label(self.second_frame, text="Number of Fireflies").grid(column=0, row=4)
-        self.num_fireflies = ttk.Entry(self.second_frame)
-        self.num_fireflies.grid(column=1, row=4)
+        ttk.Label(self.main_frame, text="Number of Fireflies").grid(column=0, row=5, columnspan=2, pady=(5,5))
+        self.num_fireflies = ttk.Entry(self.main_frame)
+        self.num_fireflies.grid(column=2, row=5, columnspan=2)
 
         # Alpha parameter
-        ttk.Label(self.second_frame, text="Alpha").grid(column=0, row=5)
-        self.alpha = ttk.Entry(self.second_frame)
-        self.alpha.grid(column=1, row=5)
+        ttk.Label(self.main_frame, text="Alpha").grid(column=0, row=6, columnspan=2, pady=(5,5))
+        self.alpha = ttk.Entry(self.main_frame)
+        self.alpha.grid(column=2, row=6, columnspan=2)
         self.alpha.insert(0, "0.5")  # Insert the default value
 
         # Beta parameter
-        ttk.Label(self.second_frame, text="Beta").grid(column=0, row=6)
-        self.beta = ttk.Entry(self.second_frame)
-        self.beta.grid(column=1, row=6)
+        ttk.Label(self.main_frame, text="Beta").grid(column=0, row=7, columnspan=2, pady=(5,5))
+        self.beta = ttk.Entry(self.main_frame)
+        self.beta.grid(column=2, row=7, columnspan=2)
         self.beta.insert(0, "0.2")  # Insert the default value
 
         # Gamma parameter
-        ttk.Label(self.second_frame, text="Gamma").grid(column=0, row=7)
-        self.gamma = ttk.Entry(self.second_frame)
-        self.gamma.grid(column=1, row=7)
+        ttk.Label(self.main_frame, text="Gamma").grid(column=0, row=8, columnspan=2, pady=(5,5))
+        self.gamma = ttk.Entry(self.main_frame)
+        self.gamma.grid(column=2, row=8, columnspan=2)
         self.gamma.insert(0, "1.0")  # Insert the default value
 
         # Start button
-        self.start_button = ttk.Button(self.second_frame, text="Start", command=self.start_optimization)
-        self.start_button.grid(column=0, row=8, columnspan=2)
+        self.start_button = ttk.Button(self.main_frame, text="Start", command=self.start_optimization)
+        self.start_button.grid(column=0, row=9, columnspan=4, pady=(15,5))
 
         self.constraint_entries = []
 
     def add_constraint(self):
-        row = len(self.constraint_entries) + 9
-        coeffs = [tk.Entry(self.second_frame) for _ in range(2)]
+        row = len(self.constraint_entries) + 10
+        coeffs = [tk.Entry(self.main_frame, width=5) for _ in range(2)]
         for i, coeff in enumerate(coeffs):
             coeff.grid(column=i, row=row)
         sign = tk.StringVar()
         sign.set("<=")
-        signs = ["<=", ">=", "="]
-        ttk.OptionMenu(self.second_frame, sign, *signs).grid(column=2, row=row)
-        rhs = tk.Entry(self.second_frame)
+        signs = [ "<=","<=", ">=", "="]
+        sign_option_menu = ttk.OptionMenu(self.main_frame, sign, *signs)
+        sign_option_menu.grid(column=2, row=row, pady=(5,5))
+        rhs = tk.Entry(self.main_frame, width=5)
         rhs.grid(column=3, row=row)
-        self.constraint_entries.append((coeffs, sign, rhs))
+        #ttk.Label(self.main_frame, text="x2").grid(column=4, row=row)
+        self.constraint_entries.append((coeffs, sign_option_menu, rhs))
+
+    def delete_constraint(self):
+        if self.constraint_entries:
+            coeffs, sign_option_menu, rhs = self.constraint_entries.pop()
+            for coeff in coeffs:
+                coeff.destroy()
+            sign_option_menu.destroy()  # This will destroy the OptionMenu widget
+            rhs.destroy()
 
     def start_optimization(self):
         obj_func = lambda x: float(self.obj_a.get()) * x[0] + float(self.obj_b.get()) * x[1]
@@ -174,51 +178,29 @@ class LinearProgrammingGUI:
         for coeffs, sign, rhs in self.constraint_entries:
             constraints.append({
                 'coeffs': [float(coeff.get()) for coeff in coeffs],
-                'sign': sign.get(),
+                'sign': sign.cget("textvariable").get(),
                 'rhs': float(rhs.get())
             })
 
         num_iterations = int(self.num_iterations.get())
         num_fireflies = int(self.num_fireflies.get())
-        alpha = float(self.alpha.get())  # Get the alpha parameter from the user's input
-        beta = float(self.beta.get())  # Get the beta parameter from the user's input
-        gamma = float(self.gamma.get())  # Get the gamma parameter from the user's input
+        alpha = float(self.alpha.get())  # Get the alpha parameter
+        beta = float(self.beta.get())    # Get the beta parameter
+        gamma = float(self.gamma.get())  # Get the gamma parameter
 
-        fa = FireflyAlgorithm(obj_func, constraints, bounds=[(0, 1000), (0, 1000)], n_fireflies=num_fireflies, max_iter=num_iterations, alpha=alpha, beta=beta, gamma=gamma)
+        algorithm = FireflyAlgorithm(obj_func, constraints, [(0, 10), (0, 10)], n_fireflies=num_fireflies,
+                                     max_iter=num_iterations, alpha=alpha, beta=beta, gamma=gamma)
 
-        fig, ax = plt.subplots()
-        scat = ax.scatter([], [], c='red')
+        self.fig, self.ax = plt.subplots()
+        self.scat = self.ax.scatter([], [])
 
-        # Create a grid of points
-        x = np.linspace(0, 1000, 1000)
-        y = np.linspace(0, 1000, 1000)
-        X, Y = np.meshgrid(x, y)
+        def update(frame):
+            self.scat.set_offsets(frame)
+            return self.scat,
 
-        # Check if each point satisfies all the constraints
-        for constraint in constraints:
-            if constraint['sign'] == '<=':
-                region = constraint['coeffs'][0] * X + constraint['coeffs'][1] * Y <= constraint['rhs']
-            elif constraint['sign'] == '>=':
-                region = constraint['coeffs'][0] * X + constraint['coeffs'][1] * Y >= constraint['rhs']
-            else:  # constraint['sign'] == '='
-                region = constraint['coeffs'][0] * X + constraint['coeffs'][1] * Y == constraint['rhs']
-            ax.imshow(region, extent=(0, 1000, 0, 1000), origin='lower', alpha=0.3, aspect='auto')
-
-        fireflies_list = list(fa.optimize())
-
-        min_x = min(firefly[0] for fireflies in fireflies_list for firefly in fireflies)
-        max_x = max(firefly[0] for fireflies in fireflies_list for firefly in fireflies)
-        min_y = min(firefly[1] for fireflies in fireflies_list for firefly in fireflies)
-        max_y = max(firefly[1] for fireflies in fireflies_list for firefly in fireflies)
-
-        def update(i):
-            fireflies = fireflies_list[i]  # Use the i-th element of fireflies_list
-            scat.set_offsets(fireflies)
-            ax.set_xlim(min_x, max_x)  # Set xlim to the minimum and maximum x values
-            ax.set_ylim(min_y, max_y)  # Set ylim to the minimum and maximum y values
-            return scat,
-
-        ani = FuncAnimation(fig, update, frames=len(fireflies_list), repeat=False, interval=500)
+        self.ani = FuncAnimation(self.fig, update, frames=algorithm.optimize, repeat=False)
+        self.ax.set_xlim(0, 10)
+        self.ax.set_ylim(0, 10)
         plt.show()
 
 if __name__ == "__main__":

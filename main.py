@@ -87,7 +87,7 @@ class LinearProgrammingGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Firefly Algorithm for Linear Programming")
-        self.root.geometry("600x600")
+        self.root.geometry("600x800")
 
         self.main_frame = tk.Frame(root)
         self.main_frame.pack(fill=tk.BOTH, expand=1)
@@ -100,76 +100,97 @@ class LinearProgrammingGUI:
 
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         self.canvas.bind('<Configure>', lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.bind("<Configure>", self.on_canvas_resize)
 
         self.second_frame = tk.Frame(self.canvas)
+        self.second_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.canvas.create_window((0, 0), window=self.second_frame, anchor="nw")
+        self.canvas.create_window((0, 0), window=self.second_frame, anchor="nw" , width=500)
 
         # Objective function inputs
-        ttk.Label(self.second_frame, text="Objective Function").grid(column=0, row=0)
-        self.obj_a = ttk.Entry(self.second_frame, width=10)
-        self.obj_a.grid(column=1, row=1)
-        ttk.Label(self.second_frame, text="x +").grid(column=2, row=1)
-        self.obj_b = ttk.Entry(self.second_frame, width=10)
-        self.obj_b.grid(column=3, row=1)
-        ttk.Label(self.second_frame, text="y").grid(column=4, row=1)
+        ttk.Label(self.second_frame, text="Objective Function").pack(anchor="center", pady=(10, 5))
+
+        obj_frame = tk.Frame(self.second_frame)
+        obj_frame.pack(anchor="center")
+        self.obj_a = ttk.Entry(obj_frame, width=10)
+        self.obj_a.pack(side="left", padx=5)
+        ttk.Label(obj_frame, text="x1 +").pack(side="left")
+        self.obj_b = ttk.Entry(obj_frame, width=10)
+        self.obj_b.pack(side="left", padx=5)
+        ttk.Label(obj_frame, text="x2").pack(side="left")
 
         # Maximize or minimize
+        opt_frame = tk.Frame(self.second_frame)
+        opt_frame.pack(anchor="center", pady=5)
         self.opt_dir = tk.StringVar()
-        ttk.Radiobutton(self.second_frame, text="Maximize", variable=self.opt_dir, value="max").grid(column=0, row=2)
-        ttk.Radiobutton(self.second_frame, text="Minimize", variable=self.opt_dir, value="min").grid(column=1, row=2)
+        ttk.Radiobutton(opt_frame, text="Maximize", variable=self.opt_dir, value="max").pack(side="left", padx=5)
+        ttk.Radiobutton(opt_frame, text="Minimize", variable=self.opt_dir, value="min").pack(side="left", padx=5)
 
         # Constraints
         self.constraints = []
-        self.add_constraint_button = ttk.Button(self.second_frame, text="Add Constraint", command=self.add_constraint)
-        self.add_constraint_button.grid(column=0, row=3, columnspan=2, pady=(5,5))
+        button_frame = tk.Frame(self.second_frame)
+        button_frame.pack(anchor="center", pady=(10, 5))
+        self.add_constraint_button = ttk.Button(button_frame, text="Add Constraint", command=self.add_constraint)
+        self.add_constraint_button.pack(side="left", padx=5)
+        self.delete_constraint_button = ttk.Button(button_frame, text="Delete Constraint", command=self.delete_constraint)
+        self.delete_constraint_button.pack(side="left", padx=5)
 
         # Number of iterations
-        ttk.Label(self.second_frame, text="Number of Iterations").grid(column=0, row=4)
+        ttk.Label(self.second_frame, text="Number of Iterations").pack(anchor="center", pady=(5, 0))
         self.num_iterations = ttk.Entry(self.second_frame)
-        self.num_iterations.grid(column=1, row=4)
+        self.num_iterations.pack(anchor="center", padx=5, pady=(5, 10))
 
         # Number of fireflies
-        ttk.Label(self.second_frame, text="Number of Fireflies").grid(column=0, row=5)
+        ttk.Label(self.second_frame, text="Number of Fireflies").pack(anchor="center", pady=(5, 0))
         self.num_fireflies = ttk.Entry(self.second_frame)
-        self.num_fireflies.grid(column=1, row=5)
+        self.num_fireflies.pack(anchor="center", padx=5, pady=(5, 10))
 
         # Alpha parameter
-        ttk.Label(self.second_frame, text="Alpha").grid(column=0, row=6)
+        ttk.Label(self.second_frame, text="Alpha").pack(anchor="center", pady=(5, 0))
         self.alpha = ttk.Entry(self.second_frame)
-        self.alpha.grid(column=1, row=6)
+        self.alpha.pack(anchor="center", padx=5, pady=(5, 10))
         self.alpha.insert(0, "0.5")  # Insert the default value
 
         # Beta parameter
-        ttk.Label(self.second_frame, text="Beta").grid(column=0, row=7)
+        ttk.Label(self.second_frame, text="Beta").pack(anchor="center", pady=(5, 0))
         self.beta = ttk.Entry(self.second_frame)
-        self.beta.grid(column=1, row=6)
+        self.beta.pack(anchor="center", padx=5, pady=(5, 10))
         self.beta.insert(0, "0.2")  # Insert the default value
 
         # Gamma parameter
-        ttk.Label(self.second_frame, text="Gamma").grid(column=0, row=8)
+        ttk.Label(self.second_frame, text="Gamma").pack(anchor="center", pady=(5, 0))
         self.gamma = ttk.Entry(self.second_frame)
-        self.gamma.grid(column=1, row=7)
+        self.gamma.pack(anchor="center", padx=5, pady=(5, 10))
         self.gamma.insert(0, "1.0")  # Insert the default value
 
         # Start button
         self.start_button = ttk.Button(self.second_frame, text="Start", command=self.start_optimization)
-        self.start_button.grid(column=0, row=9, columnspan=2)
+        self.start_button.pack(anchor="center", pady=(10, 10))
 
         self.constraint_entries = []
 
+    def on_canvas_resize(self, event):
+        self.second_frame.place(relx=0.5, rely=0.5, anchor="center", width=500)
+
     def add_constraint(self):
-        row = len(self.constraint_entries) + 9
-        coeffs = [tk.Entry(self.second_frame) for _ in range(2)]
-        for i, coeff in enumerate(coeffs):
-            coeff.grid(column=i, row=row)
+        row_frame = tk.Frame(self.second_frame)
+        row_frame.pack(anchor="center", pady=(5, 10))
+        coeffs = [ttk.Entry(row_frame, width=10) for _ in range(2)]
+        for coeff in coeffs:
+            coeff.pack(side="left", padx=5)
         sign = tk.StringVar()
         sign.set("<=")
-        signs = [ "<=","<=", ">=", "="]
-        ttk.OptionMenu(self.second_frame, sign, *signs).grid(column=2, row=row)
-        rhs = tk.Entry(self.second_frame)
-        rhs.grid(column=3, row=row)
+        signs = ["<=","<=", ">=", "="]
+        ttk.OptionMenu(row_frame, sign, *signs).pack(side="left", padx=5)
+        rhs = ttk.Entry(row_frame, width=10)
+        rhs.pack(side="left", padx=5)
         self.constraint_entries.append((coeffs, sign, rhs))
+
+    def delete_constraint(self):
+        if self.constraint_entries:
+            last_row_frame = self.constraint_entries[-1][0][0].master
+            last_row_frame.destroy()
+            self.constraint_entries.pop()
 
     def start_optimization(self):
         obj_func = lambda x: float(self.obj_a.get()) * x[0] + float(self.obj_b.get()) * x[1]

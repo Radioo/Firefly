@@ -241,8 +241,8 @@ class LinearProgrammingGUI:
         def update(i):
             fireflies = fireflies_list[i]  # Use the i-th element of fireflies_list
             scat.set_offsets(fireflies)
-            ax.set_xlim(min_x, max_x)  # Set xlim to the minimum and maximum x values
-            ax.set_ylim(min_y, max_y)  # Set ylim to the minimum and maximum y values
+            ax.set_xlim(min_x, max_x + 100)  # Set xlim to the minimum and maximum x values
+            ax.set_ylim(min_y, max_y + 100)  # Set ylim to the minimum and maximum y values
             return scat,
 
         ani = FuncAnimation(fig, update, frames=len(fireflies_list), repeat=False, interval=500)

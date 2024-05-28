@@ -68,9 +68,11 @@ class FireflyAlgorithm:
         print("Best solution found:", best_firefly)
         solution_window = tk.Toplevel(self.root)
         solution_window.title("Best Solution")
-        solution_window.geometry("250x50")
+        solution_window.geometry("250x100")
         ttk.Label(solution_window, text="Best solution found:").pack()
         ttk.Label(solution_window, text=str(best_firefly)).pack()
+        ttk.Label(solution_window, text="Objective function value:").pack()
+        ttk.Label(solution_window, text=str(best_intensity)).pack()
 
     def _satisfy_constraints(self, firefly):
         for constraint in self.constraints:
@@ -238,14 +240,16 @@ class LinearProgrammingGUI:
         min_y = min(firefly[1] for fireflies in fireflies_list for firefly in fireflies)
         max_y = max(firefly[1] for fireflies in fireflies_list for firefly in fireflies)
 
-        def update(i):
-            fireflies = fireflies_list[i]  # Use the i-th element of fireflies_list
-            scat.set_offsets(fireflies)
-            ax.set_xlim(min_x, max_x + 100)  # Set xlim to the minimum and maximum x values
-            ax.set_ylim(min_y, max_y + 100)  # Set ylim to the minimum and maximum y values
-            return scat,
+        # Plot the final state of the fireflies
+        final_fireflies = fireflies_list[-1]
+        scat.set_offsets(final_fireflies)
+        ax.set_xlim(min_x, max_x)
+        ax.set_ylim(min_y, max_y)
 
-        ani = FuncAnimation(fig, update, frames=len(fireflies_list), repeat=False, interval=500)
+        # Plot the best solution in green
+        best_solution = final_fireflies[np.argmax(fa.intensities)]
+        ax.scatter(*best_solution, c='green')
+
         plt.show()
 
 if __name__ == "__main__":

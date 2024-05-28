@@ -1,89 +1,54 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import tkinter as tk
 import matplotlib
-from tkinter import ttk
-from matplotlib.animation import FuncAnimation
+import matplotlib.pyplot as plt
+import numpy as np
+import tkinter as tk
+from tkinter import messagebox, ttk
+from firefly import FireflyAlgorithm
 
-matplotlib.use("TkAgg")
+matplotlib.use('TkAgg')
 
-class FireflyAlgorithm:
-    def __init__(self, obj_func, constraints, bounds, root, n_fireflies=200, max_iter=50, alpha=0.5, beta=0.2, gamma=1.0):
-        self.obj_func = obj_func
+class LinearProgrammingVisualizer:
+    def __init__(self, constraints, objective):
         self.constraints = constraints
-        self.bounds = bounds
-        self.root = root
-        self.n_fireflies = n_fireflies
-        self.max_iter = max_iter
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
+        self.objective = objective
+        self.max_x, self.max_y = self.calculate_max_axis()
 
-        self.fireflies = np.zeros((self.n_fireflies, 2))
-        print("Generating fireflies...")
-        for i in range(self.n_fireflies):
-            while True:
-                firefly = np.random.rand(2)
-                firefly[0] = firefly[0] * (bounds[0][1] - bounds[0][0]) + bounds[0][0]
-                firefly[1] = firefly[1] * (bounds[1][1] - bounds[1][0]) + bounds[1][0]
-                if self._satisfy_constraints(firefly):
-                    self.fireflies[i] = firefly
-                    print(i + 1, "/", self.n_fireflies, "fireflies generated")
-                    break
+    def calculate_max_axis(self):
+        max_x = max_y = 0
+        for (a, b, _, rhs) in self.constraints:
+            max_x = max(max_x, rhs / a if a != 0 else 0)
+            max_y = max(max_y, rhs / b if b != 0 else 0)
+        return max_x, max_y
 
-        self.intensities = np.apply_along_axis(self.obj_func, 1, self.fireflies)
+    def plot_constraints(self):
+        plt.figure(figsize=(8, 8))
+        x = np.linspace(0, self.max_x, 400)
 
-    def optimize(self):
-        best_firefly = None
-        best_intensity = -np.inf
+        for (a, b, sign, rhs) in self.constraints:
+            # sign can be either '<=', '>=', or '='
+            if b == 0:
+                y = np.where(a * x <= rhs, np.inf, -np.inf)
+            else:
+                y = (rhs - a * x) / b
+            if sign == '<=':
+                plt.fill_between(x, y, self.max_y, alpha=0.3, where=(y <= self.max_y))
+            elif sign == '>=':
+                plt.fill_between(x, y, 0, alpha=0.3, where=(y >= 0))
+            elif sign == '=':
+                y1 = np.where(b != 0, (rhs - a * x) / b, np.inf)
+                y2 = np.where(b != 0, (rhs - a * x) / b, np.inf)
+                plt.fill_between(x, y1, y2, alpha=0.3)
 
-        for t in range(self.max_iter):
-            print("Iteration", t, "Best solution found:", best_firefly)
+    def visualize(self):
+        self.plot_constraints()
+        # self.plot_objective_function()
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.xlim(0)
+        plt.ylim(0)
+        plt.title('Linear Programming Visualization')
+        return plt
 
-            i = 0
-            while i < len(self.fireflies):
-                for j in range(len(self.fireflies)):
-                    if self.intensities[j] < self.intensities[i]:
-                        distance = np.linalg.norm(self.fireflies[i] - self.fireflies[j])
-                        beta = self.beta * np.exp(-self.gamma * distance ** 2)
-                        self.fireflies[i] = self.fireflies[i] + beta * (self.fireflies[j] - self.fireflies[i]) + \
-                                            self.alpha * (np.random.rand(2) - 0.5)
-                        self.fireflies[i] = np.clip(self.fireflies[i], [b[0] for b in self.bounds],
-                                                    [b[1] for b in self.bounds])
-                        if self._satisfy_constraints(self.fireflies[i]):
-                            self.intensities[i] = self.obj_func(self.fireflies[i])
-                            if self.intensities[i] > best_intensity:
-                                best_intensity = self.intensities[i]
-                                best_firefly = self.fireflies[i]
-                        else:
-                            # Remove firefly that does not satisfy all constraints
-                            self.fireflies = np.delete(self.fireflies, i, axis=0)
-                            self.intensities = np.delete(self.intensities, i)
-                            i -= 1
-                            break
-                i += 1
-
-            yield self.fireflies
-
-        print("Best solution found:", best_firefly)
-        solution_window = tk.Toplevel(self.root)
-        solution_window.title("Best Solution")
-        solution_window.geometry("250x100")
-        ttk.Label(solution_window, text="Best solution found:").pack()
-        ttk.Label(solution_window, text=str(best_firefly)).pack()
-        ttk.Label(solution_window, text="Objective function value:").pack()
-        ttk.Label(solution_window, text=str(best_intensity)).pack()
-
-    def _satisfy_constraints(self, firefly):
-        for constraint in self.constraints:
-            left = np.dot(constraint['coeffs'], firefly)
-            if constraint['sign'] == '<=' and not (left <= constraint['rhs']):
-                return False
-            elif constraint['sign'] == '>=' and not (left >= constraint['rhs']):
-                return False
-            elif constraint['sign'] == '=' and not (left == constraint['rhs']):
-                return False
-        return True
 
 class LinearProgrammingGUI:
     def __init__(self, root):
@@ -195,64 +160,80 @@ class LinearProgrammingGUI:
             self.constraint_entries.pop()
 
     def start_optimization(self):
-        obj_func = lambda x: float(self.obj_a.get()) * x[0] + float(self.obj_b.get()) * x[1]
-        if self.opt_dir.get() == "min":
-            obj_func = lambda x: -obj_func(x)
-
-        constraints = []
-        for coeffs, sign, rhs in self.constraint_entries:
-            constraints.append({
-                'coeffs': [float(coeff.get()) for coeff in coeffs],
-                'sign': sign.get(),
-                'rhs': float(rhs.get())
-            })
-
         num_iterations = int(self.num_iterations.get())
         num_fireflies = int(self.num_fireflies.get())
         alpha = float(self.alpha.get())  # Get the alpha parameter from the user's input
         beta = float(self.beta.get())  # Get the beta parameter from the user's input
         gamma = float(self.gamma.get())  # Get the gamma parameter from the user's input
 
-        fa = FireflyAlgorithm(obj_func, constraints, bounds=[(0, 1000), (0, 1000)], root=self.root, n_fireflies=num_fireflies, max_iter=num_iterations, alpha=alpha, beta=beta, gamma=gamma)
+        # objective = (float(self.obj_a.get()), float(self.obj_b.get()))
+        # constraints = []
+        # for (coeffs, sign, rhs) in self.constraint_entries:
+        #     a = float(coeffs[0].get())
+        #     b = float(coeffs[1].get())
+        #     rhs = float(rhs.get())
+        #     constraints.append((a, b, sign.get(), rhs))
 
-        fig, ax = plt.subplots()
-        scat = ax.scatter([], [], c='red')
+        constraints = [
+            (20, 10, '<=', 200),
+            (10, 20, '<=', 120),
+            (10, 30, '<=', 150),
+            (1, 0, '>=', 0),
+            (0, 1, '>=', 0)
+        ]
 
-        # Create a grid of points
-        x = np.linspace(0, 1000, 1000)
-        y = np.linspace(0, 1000, 1000)
-        X, Y = np.meshgrid(x, y)
+        objective = (5, 12)
 
-        # Check if each point satisfies all the constraints
-        for constraint in constraints:
-            if constraint['sign'] == '<=':
-                region = constraint['coeffs'][0] * X + constraint['coeffs'][1] * Y <= constraint['rhs']
-            elif constraint['sign'] == '>=':
-                region = constraint['coeffs'][0] * X + constraint['coeffs'][1] * Y >= constraint['rhs']
-            else:  # constraint['sign'] == '='
-                region = constraint['coeffs'][0] * X + constraint['coeffs'][1] * Y == constraint['rhs']
-            ax.imshow(region, extent=(0, 1000, 0, 1000), origin='lower', alpha=0.3, aspect='auto')
+        # Calculate bounds
+        bounds = []
+        for i in range(2):
+            min_val = min([constraint[i] for constraint in constraints])
+            max_val = max([constraint[i] for constraint in constraints])
+            bounds.append((min_val, max_val))
 
-        fireflies_list = list(fa.optimize())
+        vis = LinearProgrammingVisualizer(constraints, objective)
+        plt = vis.visualize()
+        obj_func = lambda x: objective[0] * x[0] + objective[1] * x[1]
 
-        min_x = min(firefly[0] for fireflies in fireflies_list for firefly in fireflies)
-        max_x = max(firefly[0] for fireflies in fireflies_list for firefly in fireflies)
-        min_y = min(firefly[1] for fireflies in fireflies_list for firefly in fireflies)
-        max_y = max(firefly[1] for fireflies in fireflies_list for firefly in fireflies)
-
-        # Plot the final state of the fireflies
-        final_fireflies = fireflies_list[-1]
-        scat.set_offsets(final_fireflies)
-        ax.set_xlim(min_x, max_x)
-        ax.set_ylim(min_y, max_y)
-
-        # Plot the best solution in green
-        best_solution = final_fireflies[np.argmax(fa.intensities)]
-        ax.scatter(*best_solution, c='green')
-
+        firefly = FireflyAlgorithm(obj_func, constraints, bounds, self.root, plt, n_fireflies=num_fireflies, max_iter=num_iterations, alpha=alpha, beta=beta, gamma=gamma)
+        firefly.optimize()
         plt.show()
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = LinearProgrammingGUI(root)
-    root.mainloop()
+
+
+# Example usage
+# constraints = [
+#     (20, 10, '<=', 200),
+#     (10, 20, '<=', 120),
+#     (10, 30, '<=', 150),
+#     (1, 0, '>=', 0),
+#     (0, 1, '>=', 0)
+# ]
+
+# constraints = [
+#     (2, 1, '<=', 600),
+#     (0, 0, '<=', 225),
+#     (5, 4, '<=', 1000),
+#     (0, 2, '>=', 150),
+#     (0, 0, '>=', 0)
+# ]
+#
+# # objective = (5, 12)
+# objective = (3, 4)
+#
+# lp_visualizer = LinearProgrammingVisualizer(constraints, objective)
+# lp_visualizer.visualize()
+
+root = tk.Tk()
+app = LinearProgrammingGUI(root)
+root.mainloop()
+
+"""alpha: This is the randomness factor. It controls the randomness in the movement of the fireflies. This randomness 
+can help the algorithm avoid getting stuck in local optima by allowing the fireflies to explore the search space. 
+
+beta: This is the attractiveness at zero distance. It controls the attractiveness of fireflies at zero distance. The 
+attractiveness decreases as the distance between the fireflies increases. 
+
+gamma: This is the light absorption 
+coefficient. It controls the decrease in the light intensity (and thus attractiveness) of a firefly with increasing 
+distance."""

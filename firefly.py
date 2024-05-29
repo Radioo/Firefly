@@ -22,6 +22,7 @@ class FireflyAlgorithm:
 
         self.fireflies = np.zeros((self.n_fireflies, 2))
         print("Generating fireflies...")
+        print("Bounds:", bounds)
         for i in range(self.n_fireflies):
             while True:
                 firefly = np.random.rand(2)

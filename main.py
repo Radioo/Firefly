@@ -102,6 +102,22 @@ class LinearProgrammingGUI:
         self.delete_constraint_button = ttk.Button(button_frame, text="Delete Constraint", command=self.delete_constraint)
         self.delete_constraint_button.pack(side="left", padx=5)
 
+        # Bounds
+        ttk.Label(self.second_frame, text="Bounds").pack(anchor="center", pady=(10, 5))
+        bounds_frame = tk.Frame(self.second_frame)
+        bounds_frame.pack(anchor="center")
+        self.bounds = []
+        for i in range(2):
+            bound_frame = tk.Frame(bounds_frame)
+            bound_frame.pack(anchor="center")
+            ttk.Label(bound_frame, text="x" + str(i + 1) + ": ").pack(side="left")
+            min_bound = ttk.Entry(bound_frame, width=10)
+            min_bound.pack(side="left", padx=5)
+            ttk.Label(bound_frame, text="to").pack(side="left")
+            max_bound = ttk.Entry(bound_frame, width=10)
+            max_bound.pack(side="left", padx=5)
+            self.bounds.append((min_bound, max_bound))
+
         # Number of iterations
         ttk.Label(self.second_frame, text="Number of Iterations").pack(anchor="center", pady=(5, 0))
         self.num_iterations = ttk.Entry(self.second_frame)
@@ -166,34 +182,33 @@ class LinearProgrammingGUI:
         beta = float(self.beta.get())  # Get the beta parameter from the user's input
         gamma = float(self.gamma.get())  # Get the gamma parameter from the user's input
 
-        # objective = (float(self.obj_a.get()), float(self.obj_b.get()))
-        # constraints = []
-        # for (coeffs, sign, rhs) in self.constraint_entries:
-        #     a = float(coeffs[0].get())
-        #     b = float(coeffs[1].get())
-        #     rhs = float(rhs.get())
-        #     constraints.append((a, b, sign.get(), rhs))
+        objective = (float(self.obj_a.get()), float(self.obj_b.get()))
+        constraints = []
+        for (coeffs, sign, rhs) in self.constraint_entries:
+            a = float(coeffs[0].get())
+            b = float(coeffs[1].get())
+            rhs = float(rhs.get())
+            constraints.append((a, b, sign.get(), rhs))
 
-        constraints = [
-            (20, 10, '<=', 200),
-            (10, 20, '<=', 120),
-            (10, 30, '<=', 150),
-            (1, 0, '>=', 0),
-            (0, 1, '>=', 0)
-        ]
-
-        objective = (5, 12)
+        # constraints = [
+        #     (20, 10, '<=', 200),
+        #     (10, 20, '<=', 120),
+        #     (10, 30, '<=', 150),
+        #     (1, 0, '>=', 0),
+        #     (0, 1, '>=', 0)
+        # ]
+        #
+        # objective = (5, 12)
 
         # Calculate bounds
-        bounds = []
-        for i in range(2):
-            min_val = min([constraint[i] for constraint in constraints])
-            max_val = max([constraint[i] for constraint in constraints])
-            bounds.append((min_val, max_val))
+        print("Constraints:", constraints)
+        bounds = [(float(min_bound.get()), float(max_bound.get())) for (min_bound, max_bound) in self.bounds]
 
         vis = LinearProgrammingVisualizer(constraints, objective)
         plt = vis.visualize()
         obj_func = lambda x: objective[0] * x[0] + objective[1] * x[1]
+        if self.opt_dir.get() == "min":
+            obj_func = lambda x: -obj_func(x)
 
         firefly = FireflyAlgorithm(obj_func, constraints, bounds, self.root, plt, n_fireflies=num_fireflies, max_iter=num_iterations, alpha=alpha, beta=beta, gamma=gamma)
         firefly.optimize()

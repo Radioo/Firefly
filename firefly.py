@@ -48,6 +48,7 @@ class FireflyAlgorithm:
                     if self.intensities[j] < self.intensities[i]:
                         distance = np.linalg.norm(self.fireflies[i] - self.fireflies[j])
                         beta = self.beta * np.exp(-self.gamma * distance ** 2)
+                        old_position = self.fireflies[i].copy()  # Store the old position
                         self.fireflies[i] = self.fireflies[i] + beta * (self.fireflies[j] - self.fireflies[i]) + \
                                             self.alpha * (np.random.rand(2) - 0.5)
                         self.fireflies[i] = np.clip(self.fireflies[i], [b[0] for b in self.bounds],
@@ -59,11 +60,8 @@ class FireflyAlgorithm:
                                 self.best_firefly = self.fireflies[i]
                                 new_best = self.best_firefly
                         else:
-                            # Remove firefly that does not satisfy all constraints
-                            self.fireflies = np.delete(self.fireflies, i, axis=0)
-                            self.intensities = np.delete(self.intensities, i)
-                            i -= 1
-                            break
+                            # Revert to old position if the new position does not satisfy all constraints
+                            self.fireflies[i] = old_position
                 i += 1
 
             if new_best is not None:

@@ -75,7 +75,7 @@ class LinearProgrammingGUI:
         self.canvas.create_window((0, 0), window=self.second_frame, anchor="nw" , width=500)
 
         # Objective function inputs
-        ttk.Label(self.second_frame, text="Objective Function").pack(anchor="center", pady=(10, 5))
+        ttk.Label(self.second_frame, text="Objective Function to maximize").pack(anchor="center", pady=(10, 5))
 
         obj_frame = tk.Frame(self.second_frame)
         obj_frame.pack(anchor="center")
@@ -85,13 +85,6 @@ class LinearProgrammingGUI:
         self.obj_b = ttk.Entry(obj_frame, width=10)
         self.obj_b.pack(side="left", padx=5)
         ttk.Label(obj_frame, text="x2").pack(side="left")
-
-        # Maximize or minimize
-        opt_frame = tk.Frame(self.second_frame)
-        opt_frame.pack(anchor="center", pady=5)
-        self.opt_dir = tk.StringVar()
-        ttk.Radiobutton(opt_frame, text="Maximize", variable=self.opt_dir, value="max").pack(side="left", padx=5)
-        ttk.Radiobutton(opt_frame, text="Minimize", variable=self.opt_dir, value="min").pack(side="left", padx=5)
 
         # Constraints
         self.constraints = []
@@ -207,8 +200,6 @@ class LinearProgrammingGUI:
         vis = LinearProgrammingVisualizer(constraints, objective)
         plt = vis.visualize()
         obj_func = lambda x: objective[0] * x[0] + objective[1] * x[1]
-        if self.opt_dir.get() == "min":
-            obj_func = lambda x: -obj_func(x)
 
         firefly = FireflyAlgorithm(obj_func, constraints, bounds, self.root, plt, n_fireflies=num_fireflies, max_iter=num_iterations, alpha=alpha, beta=beta, gamma=gamma)
         firefly.optimize()

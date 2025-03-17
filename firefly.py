@@ -36,34 +36,44 @@ class FireflyAlgorithm:
         self.intensities = np.apply_along_axis(self.obj_func, 1, self.fireflies)
 
     def optimize(self):
-        best_intensity = -np.inf
+        best_intensity = float('-inf')  # Initialize with negative infinity for maximization
         ax = self.plot.gca()
         new_best = None
 
         for t in range(self.max_iter):
-            print("Iteration", t, "Best solution found:", self.best_firefly)
+            print(f"Iteration {t}, Best solution found: {self.best_firefly}")
+            self.best_fireflies.append(self.best_firefly.copy() if self.best_firefly is not None else None)
 
-            i = 0
-            while i < len(self.fireflies):
+            for i in range(len(self.fireflies)):
                 for j in range(len(self.fireflies)):
-                    if self.intensities[j] < self.intensities[i]:
+                    # Move towards brighter fireflies (higher intensity for maximization)
+                    if self.intensities[j] > self.intensities[i]:  # Changed from < to >
                         distance = np.linalg.norm(self.fireflies[i] - self.fireflies[j])
                         beta = self.beta * np.exp(-self.gamma * distance ** 2)
-                        old_position = self.fireflies[i].copy()  # Store the old position
+                        old_position = self.fireflies[i].copy()
+
+                        # Apply movement
                         self.fireflies[i] = self.fireflies[i] + beta * (self.fireflies[j] - self.fireflies[i]) + \
                                             self.alpha * (np.random.rand(2) - 0.5)
+
+                        # Apply bounds
                         self.fireflies[i] = np.clip(self.fireflies[i], [b[0] for b in self.bounds],
                                                     [b[1] for b in self.bounds])
+
+                        # Check constraints and update intensity
                         if self._satisfy_constraints(self.fireflies[i]):
                             self.intensities[i] = self.obj_func(self.fireflies[i])
                             if self.intensities[i] > best_intensity:
                                 best_intensity = self.intensities[i]
-                                self.best_firefly = self.fireflies[i]
-                                new_best = self.best_firefly
+                                self.best_firefly = self.fireflies[i].copy()
+                                new_best = self.best_firefly.copy()
                         else:
-                            # Revert to old position if the new position does not satisfy all constraints
+                            # Revert to old position if constraints not satisfied
                             self.fireflies[i] = old_position
-                i += 1
+
+            # Add more randomness to prevent stagnation
+            if t > self.max_iter // 2:
+                self.alpha *= 0.95  # Reduce alpha over time
 
             if new_best is not None:
                 ax.scatter(new_best[0], new_best[1], c='black', s=100, marker='x')
@@ -71,11 +81,10 @@ class FireflyAlgorithm:
 
             # Scatter plot without clearing the axes
             scatter = ax.scatter(self.fireflies[:, 0], self.fireflies[:, 1], c=self.intensities, cmap='viridis')
-
             scatter.set_clim(vmin=self.intensities.min(), vmax=self.intensities.max())
 
-            # Sleep for one second
-            self.plot.pause(1)
+            # Update plot
+            self.plot.pause(0.1)
             scatter.remove()
 
         print("Best solution found:", self.best_firefly)

@@ -124,6 +124,7 @@ class LinearProgrammingGUI:
         # Alpha parameter
         ttk.Label(self.second_frame, text="Alpha").pack(anchor="center", pady=(5, 0))
         self.alpha = ttk.Entry(self.second_frame)
+        self.alpha = ttk.Entry(self.second_frame)
         self.alpha.pack(anchor="center", padx=5, pady=(5, 10))
         self.alpha.insert(0, "0.5")  # Insert the default value
 
@@ -141,10 +142,41 @@ class LinearProgrammingGUI:
 
         # Start button
         self.start_button = ttk.Button(self.second_frame, text="Start", command=self.start_optimization)
+        self.start_button = ttk.Button(self.second_frame, text="Start", command=self.start_optimization)
         self.start_button.pack(anchor="center", pady=(10, 10))
 
         self.constraint_entries = []
 
+        # Pre-populate with example values
+        self.obj_a.insert(0, "5")
+        self.obj_b.insert(0, "12")
+
+        # Add default constraints
+        default_constraints = [
+            (20, 10, '<=', 200),
+            (10, 20, '<=', 120),
+            (10, 30, '<=', 150),
+            (1, 0, '>=', 0),
+            (0, 1, '>=', 0)
+        ]
+
+        for a, b, sign_val, rhs_val in default_constraints:
+            self.add_constraint()
+            entries = self.constraint_entries[-1]
+            entries[0][0].insert(0, str(a))
+            entries[0][1].insert(0, str(b))
+            entries[1].set(sign_val)
+            entries[2].insert(0, str(rhs_val))
+
+        # Set default bounds
+        self.bounds[0][0].insert(0, "0")  # x1 min
+        self.bounds[0][1].insert(0, "20")  # x1 max
+        self.bounds[1][0].insert(0, "0")  # x2 min
+        self.bounds[1][1].insert(0, "20")  # x2 max
+
+        # Set default iterations and fireflies
+        self.num_iterations.insert(0, "50")
+        self.num_fireflies.insert(0, "200")
     def on_canvas_resize(self, event):
         self.second_frame.place(relx=0.5, rely=0.5, anchor="center", width=500)
 
